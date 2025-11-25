@@ -1,7 +1,7 @@
 {
   "name": "vitest-browser-angular",
-  "version": "0.0.2",
-  "description": "Mount Angular components in VItest Browser Mode",
+  "version": "0.0.4",
+  "description": "Render Angular components in VItest Browser Mode",
   "author": "Shai Reznik (HiRez.io)",
   "license": "MIT",
   "homepage": "https://github.com/hirezio/vitest-browser-angular#readme",
@@ -21,24 +21,24 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
     },
     "./setup-zones": {
-      "types": "./dist/setup-zones.d.ts",
-      "default": "./dist/setup-zones.js"
+      "types": "./dist/setup-zones.d.mts",
+      "default": "./dist/setup-zones.mjs"
     }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "files": [
     "*.d.ts",
     "*.mjs",
     "dist"
   ],
   "engines": {
-    "node": ">=22.0.0"
+    "node": "^18.0.0 || ^20.0.0 || >=22.0.0"
   },
   "scripts": {
     "build": "tsdown",
@@ -54,40 +54,46 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@analogjs/vitest-angular": "^1.21.2",
-    "@analogjs/vite-plugin-angular": "^1.21.2",
-    "@angular-devkit/architect": "^0.2003.5",
-    "@angular/compiler": "^20.3.4",
-    "@angular/core": "^20.3.4",
-    "@angular/platform-browser": "^20.3.4",
-    "@angular/router": "^20.3.4",
-    "@angular/common": "^20.3.4",
+    "@analogjs/vitest-angular": "^2.1.0",
+    "@analogjs/vite-plugin-angular": "^2.1.0",
+    "@angular/common": "^20.3.13",
+    "@angular/compiler": "^20.3.13",
+    "@angular/core": "^20.3.13",
+    "@angular-devkit/architect": "^0.2003.12",
+    "@angular/platform-browser": "^20.3.13",
+    "@angular/router": "^20.3.13",
     "@changesets/cli": "^2.29.7",
     "@changesets/get-github-info": "^0.6.0",
     "@changesets/types": "^6.1.0",
-    "@eslint/js": "^9.37.0",
-    "@vitest/browser": "^3.2.4",
+    "@eslint/js": "^9.39.1",
+    "@vitest/browser": "^4.0.13",
+    "@vitest/browser-playwright": "^4.0.13",
     "bumpp": "^10.3.1",
-    "changelogithub": "^13.16.0",
+    "changelogithub": "^0.13.9",
     "dotenv": "^17.2.3",
-    "eslint": "^9.37.0",
+    "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.1.8",
-    "globals": "^16.4.0",
-    "playwright": "^1.56.0",
+    "globals": "^16.5.0",
+    "playwright": "^1.57.0",
     "prettier": "^3.6.2",
     "pretty-quick": "^4.2.2",
     "rxjs": "^7.8.2",
     "simple-git-hooks": "^2.13.1",
-    "tsdown": "^0.15.6",
-    "tsup": "^8.5.0",
+    "tsdown": "^0.16.6",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.0",
-    "vitest": "^3.2.4",
+    "typescript-eslint": "^8.48.0",
+    "vitest": "^4.0.13",
     "zone.js": "^0.15.1",
-    "zx": "^8.8.4"
+    "zx": "^8.8.5"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm fmt.staged && pnpm lint"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "simple-git-hooks"
+    ]
   }
 }

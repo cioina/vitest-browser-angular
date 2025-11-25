@@ -17,7 +17,6 @@ ng-zorro.github.io/
 node_modules
 node_modules.*/
 integration/**/package-lock.json
-yarn.lock
 
 # IDEs and editors
 lib/

@@ -1,5 +1,20 @@
 # vitest-browser-angular
 
+## 0.0.4
+
+### Patch Changes
+
+- 🐞🩹 wrong types generated for index.ts (by [@shairez](https://github.com/shairez) in [`48c3b0f`](https://github.com/hirezio/vitest-browser-angular/commit/48c3b0f701e62570d309574aa52d9bf6cbeba52b))
+
+## 0.0.3
+
+### Patch Changes
+
+- Changed API to match other vitest browser mode libs (by [@shairez](https://github.com/shairez) in [`5959be0`](https://github.com/hirezio/vitest-browser-angular/commit/5959be0bdac2a624db5a47d753c012e81058230e))
+  `mount` is now `render` and you import it instead of having it as a fixture/context.
+
+  (You can always create your own by extending the `test` function and having the render function injected instead of imported)
+
 ## 0.0.2
 
 ### Patch Changes
