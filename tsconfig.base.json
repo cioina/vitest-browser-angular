@@ -11,7 +11,9 @@
     "importHelpers": true,
     "target": "esnext",
     "module": "esnext",
-    "lib": ["es2021", "dom"],
+    "lib": ["esnext", "dom", "DOM.Iterable"],
+    "types": ["vitest/globals"],
+
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": "."

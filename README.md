@@ -8,51 +8,109 @@ Render Angular components in VItest Browser Mode.
 pnpm add -D vitest-browser-angular
 ```
 
-## Setup Test Environment with Zone.js
+## Setup Test Environment
 
-```ts
-// vitest.config.ts
+To set up your test environment (with Zone.js or Zoneless), use `@analogjs/vitest-angular`'s `setupTestBed()` function.
 
-import { playwright } from '@vitest/browser-playwright';
+**Important:** Make sure to use `{ browserMode: true }` when calling `setupTestBed()` to enable Vitest browser mode's visual test preview functionality.
 
-export default defineConfig({
-  test: {
-    globals: true,
-
-    // 👇 This is what you need to add
-    setupFiles: ['vitest-browser-angular/setup-zones'],
-
-    browser: {
-      enabled: true,
-      provider: playwright(),
-      instances: [{ browser: 'chromium' }],
-    },
-  },
-});
-```
-
-## Setup Test Environment with Zoneless
-
-TBD
+For detailed setup instructions for both Zone.js and Zoneless configurations, please refer to the [Analog Vitest documentation](https://analogjs.org/docs/features/testing/vitest).
 
 ## Usage
 
+### Basic Example
+
+The `render` function supports two query patterns:
+
 ```ts
-import { test, expect } from 'vitest-browser-angular';
+import { test, expect } from 'vitest';
 import { render } from 'vitest-browser-angular';
 
 @Component({
-  template: '<h1>{{ title }}</h1>',
+  template: ` <h1>Welcome</h1> `,
 })
-export class HelloWorldComponent {
-  title = 'Hello World';
-}
+export class MyComponent {}
 
-test('render', async () => {
-  const { component } = await render(HelloWorldComponent);
-  await expect.element(component).toHaveTextContent('Hello World');
+test('query elements', async () => {
+  // Pattern 1: Use locator to query within the component element
+  const { locator } = await render(MyComponent);
+  await expect.element(locator.getByText('Welcome')).toBeVisible();
+
+  // Pattern 2: Use screen to query from document.body (useful for portals/overlays)
+  const screen = await render(MyComponent);
+  await expect.element(screen.getByText('Welcome')).toBeVisible();
+  await expect.element(screen.getByText('Some Popover Content')).toBeVisible();
 });
 ```
+
+### Query Methods
+
+Both `locator` and `screen` provide the following query methods:
+
+- `getByRole` - Locate by ARIA role and accessible name
+- `getByText` - Locate by text content
+- `getByLabelText` - Locate by associated label text
+- `getByPlaceholder` - Locate by placeholder text
+- `getByAltText` - Locate by alt text (images)
+- `getByTitle` - Locate by title attribute
+- `getByTestId` - Locate by data-testid attribute
+
+**When to use which pattern:**
+
+- **`locator`**: (full name: "Component Locator") - queries are scoped to the component's host element. Best for most component tests.
+- **`screen`**: Queries start from `baseElement` (defaults to `document.body`). Use when testing components that render content outside their host element (modals, tooltips, portals).
+
+### Container Element
+
+Access the component's host element directly via `container` (shortcut for `fixture.nativeElement`):
+
+```ts
+const { container, locator } = await render(MyComponent);
+expect(container).toBe(locator.element());
+```
+
+### Base Element
+
+Customize the root element for screen queries (useful for portal/overlay testing):
+
+```ts
+const customContainer = document.querySelector('#modal-root');
+const screen = await render(ModalComponent, {
+  baseElement: customContainer,
+});
+// screen queries now start from customContainer instead of document.body
+```
+
+## Inputs
+
+Pass input values to components using the `inputs` option:
+
+```ts
+import { Component, input } from '@angular/core';
+
+@Component({
+  template: '<h2>{{ name() }}</h2><p>Price: ${{ price() }}</p>',
+  standalone: true,
+})
+export class ProductComponent {
+  name = input('Unknown Product');
+  price = input(0);
+}
+
+test('render with inputs', async () => {
+  const screen = await render(ProductComponent, {
+    inputs: {
+      name: 'Laptop',
+      price: 1299.99,
+    },
+  });
+
+  await expect.element(screen.getByText('Laptop')).toBeVisible();
+  await expect.element(screen.getByText(/Price: \$1299\.99/)).toBeVisible();
+});
+```
+
+Works with both signal-based inputs (`input()`) and `@Input()` decorators.
 
 ## Routing
 
@@ -79,12 +137,12 @@ import { RouterLink, RouterOutlet } from '@angular/router';
 export class RoutedComponent {}
 
 test('render with simple routing', async () => {
-  const { component } = await render(RoutedComponent, {
+  const screen = await render(RoutedComponent, {
     withRouting: true,
   });
 
-  await expect.element(component).toHaveTextContent('Home');
-  await expect.element(component).toHaveTextContent('About');
+  await expect.element(screen.getByText('Home')).toBeVisible();
+  await expect.element(screen.getByText('About')).toBeVisible();
 });
 ```
 
@@ -131,18 +189,42 @@ const routes: Routes = [
 ];
 
 test('render with route configuration', async () => {
-  const { component, router } = await render(AppComponent, {
+  const { locator, router } = await render(AppComponent, {
     withRouting: {
       routes,
       initialRoute: '/home',
     },
   });
 
-  await expect.element(component).toHaveTextContent('Home Page');
+  await expect.element(locator).toHaveTextContent('Home Page');
 
   // Navigate programmatically
   await router.navigate(['/about']);
-  await expect.element(component).toHaveTextContent('About Page');
+  await expect.element(locator).toHaveTextContent('About Page');
+});
+```
+
+## Component Providers
+
+If you need to add or override [component providers](https://angular.dev/guide/di/defining-dependency-providers#component-or-directive-providers), you can use the `componentProviders` option.
+
+```ts
+@Component({
+  template: '<h1>{{ title }}</h1>',
+  providers: [GreetingService],
+})
+export class HelloWorldComponent {
+  title = 'Hello World';
+}
+
+test('renders component with service provider', async () => {
+  const screen = await render(ServiceConsumerComponent, {
+    componentProviders: [
+      { provide: GreetingService, useClass: FakeGreetingService },
+    ],
+  });
+
+  await expect.element(screen.getByText('Fake Greeting')).toBeVisible();
 });
 ```
 

@@ -1,4 +1,10 @@
-import type { EnvironmentProviders, Provider, Type } from "@angular/core";
+import type {
+  EnvironmentProviders,
+  InputSignal,
+  Provider,
+  Type,
+} from "@angular/core";
+import { inputBinding } from "@angular/core";
 import {
   type ComponentFixture,
   ɵgetCleanupHook as getCleanupHook,
@@ -6,22 +12,59 @@ import {
 } from "@angular/core/testing";
 import { provideRouter, Router, Routes } from "@angular/router";
 import { RouterTestingHarness } from "@angular/router/testing";
-import { type Locator, page } from "vitest/browser";
+import {
+  type Locator,
+  type LocatorSelectors,
+  page,
+  type PrettyDOMOptions,
+  utils,
+} from "vitest/browser";
 
-interface RoutingConfig {
+const { debug, getElementLocatorSelectors } = utils;
+export interface RoutingConfig {
   routes: Routes;
   initialRoute?: string;
 }
 
-interface RenderConfig {
+export type Inputs<CMP_TYPE extends Type<unknown>> = Partial<{
+  [PROP in keyof InstanceType<CMP_TYPE> as InstanceType<CMP_TYPE>[PROP] extends InputSignal<unknown>
+    ? PROP
+    : never]: InstanceType<CMP_TYPE>[PROP] extends InputSignal<infer VALUE>
+    ? VALUE
+    : never;
+}>;
+
+export interface ComponentRenderOptions<
+  CMP_TYPE extends Type<unknown> = Type<unknown>,
+> {
+  baseElement?: HTMLElement;
+  inputs?: Inputs<CMP_TYPE>;
   withRouting?: RoutingConfig | boolean;
   providers?: Array<Provider | EnvironmentProviders>;
+  componentProviders?: Array<Provider>;
   imports?: unknown[];
 }
+/**
+ * @deprecated Use ComponentRenderOptions instead
+ */
+export type RenderConfig<CMP_TYPE extends Type<unknown> = Type<unknown>> =
+  ComponentRenderOptions<CMP_TYPE>;
 
-export interface RenderResult<T> {
+export interface RenderResult<T> extends LocatorSelectors {
+  baseElement: HTMLElement;
+  container: HTMLElement;
   fixture: ComponentFixture<T>;
+  debug(
+    el?: HTMLElement | HTMLElement[] | Locator | Locator[],
+    maxLength?: number,
+    options?: PrettyDOMOptions,
+  ): void;
+
+  /**
+   * @deprecated Use locator instead
+   */
   component: Locator;
+  locator: Locator;
   componentClassInstance: T;
   routerHarness?: RouterTestingHarness;
   router?: Router;
@@ -29,20 +72,24 @@ export interface RenderResult<T> {
 
 export type RenderFn = <T>(
   component: Type<T>,
-  config?: RenderConfig,
+  options?: ComponentRenderOptions<Type<T>>,
 ) => Promise<RenderResult<T>>;
 
 export async function render<T>(
   componentClass: Type<T>,
-  config?: RenderConfig,
-) {
-  const imports = [componentClass, ...(config?.imports || [])];
-  const providers = [...(config?.providers || [])];
+  options?: ComponentRenderOptions<Type<T>>,
+): Promise<RenderResult<T>> {
+  const imports = [componentClass, ...(options?.imports || [])];
+  const providers = [...(options?.providers || [])];
   const renderResult: Partial<RenderResult<T>> = {};
 
-  if (config?.withRouting) {
+  const baseElement = options?.baseElement || document.body;
+
+  if (options?.withRouting) {
     const routes =
-      typeof config.withRouting === "boolean" ? [] : config.withRouting.routes;
+      typeof options.withRouting === "boolean"
+        ? []
+        : options.withRouting.routes;
     providers.push(provideRouter(routes));
   }
 
@@ -51,29 +98,51 @@ export async function render<T>(
     providers,
   });
 
-  if (config?.withRouting) {
+  if (options?.componentProviders) {
+    TestBed.overrideComponent(componentClass, {
+      add: {
+        providers: options.componentProviders,
+      },
+    });
+  }
+
+  if (options?.withRouting) {
     const routerHarness = await RouterTestingHarness.create(
-      typeof config.withRouting === "boolean"
+      typeof options.withRouting === "boolean"
         ? undefined
-        : config.withRouting.initialRoute,
+        : options.withRouting.initialRoute,
     );
     renderResult.routerHarness = routerHarness;
     renderResult.router = TestBed.inject(Router);
   }
-  const fixture = TestBed.createComponent(componentClass);
+
+  const bindings = Object.entries(options?.inputs ?? {}).map(([key, value]) =>
+    inputBinding(key, () => value),
+  );
+  const fixture = TestBed.createComponent(componentClass, {
+    bindings,
+  });
   fixture.autoDetectChanges();
   await fixture.whenStable();
 
-  const component = page.elementLocator(fixture.nativeElement);
+  const container = fixture.nativeElement;
+
+  const locator = page.elementLocator(container);
 
   return {
     ...renderResult,
+    baseElement,
+    container,
     fixture,
+    debug: (el = baseElement, maxLength, options) =>
+      debug(el, maxLength, options),
     componentClassInstance: fixture.componentInstance,
-    component,
+    component: locator, // will be removed in future versions
+    locator,
+    ...getElementLocatorSelectors(baseElement),
   };
 }
 
-export function cleanup(shouldTearndown: boolean = false) {
-  return getCleanupHook(shouldTearndown)();
+export function cleanup(shouldTeardown = false) {
+  return getCleanupHook(shouldTeardown)();
 }

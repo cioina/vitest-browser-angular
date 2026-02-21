@@ -11,6 +11,7 @@ export default defineConfig({
   cacheDir: '../../node_modules/.vite/tests/vitest-angular',
   //plugins: [nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])] as Plugin[],
   test: {
+    environment: 'happy-dom',
     watch: false,
     reporters: ['default'],
     coverage: {
