@@ -6,12 +6,12 @@ import {
   platformBrowserTesting,
 } from '@angular/platform-browser/testing';
 
-test('configure providers with setupTestBed', () => {
-  TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
-  //setupTestBed does not work
-  TestBed.configureTestingModule({
-    providers: [{ provide: MY_TOKEN, useValue: 'My Value' }],
-  });
+TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
+//setupTestBed does not work
+TestBed.configureTestingModule({
+  providers: [{ provide: MY_TOKEN, useValue: 'My Value' }],
+});
 
+test('configure providers with setupTestBed', () => {
   expect(TestBed.inject(MY_TOKEN)).toBe('My Value');
 });
